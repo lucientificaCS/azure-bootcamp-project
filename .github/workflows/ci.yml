@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Pruebas unitarias
+        working-directory: app
+        run: |
+          pip install -r requirements.txt
+          pytest -q
+
+      - name: Validar Bicep (lint + build a JSON)
+        run: az bicep build --file infra/main.bicep
+
+      - name: Construir imagen Docker
+        run: docker build -t retail-app:ci app
+
+      - name: Smoke test del contenedor (/health)
+        run: |
+          docker run -d -p 8080:80 --name t retail-app:ci
+          sleep 5
+          curl -fsS http://localhost:8080/health
