@@ -28,6 +28,7 @@ jobs:
 
       - name: Smoke test del contenedor (/health)
         run: |
-          docker run -d -p 8080:80 --name t retail-app:ci
+          docker run -d -p 8080:80 --name smoke-test retail-app:ci
           sleep 5
           curl -fsS http://localhost:8080/health
+
