@@ -55,7 +55,7 @@ Monitoreo
 ```
 
 
-## 🚀 Guía de Despliegue
+##  Guía de Despliegue
 
 ### 1. Iniciar sesión en Azure
 
@@ -123,7 +123,7 @@ curl $URL/secret-check
 
 ---
 
-## 🧹 Eliminación de Recursos
+##  Eliminación de Recursos
 
 Para evitar consumir créditos innecesariamente, todos los recursos pueden eliminarse con un único comando:
 
