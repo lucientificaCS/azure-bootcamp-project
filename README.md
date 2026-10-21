@@ -134,3 +134,18 @@ az group delete \
   --no-wait
 ```
 
+## Evidencias
+
+Para el certificado del bootcamp, presento las siguientes evidencias del flujo de trabajo y configuración del proyecto:
+
+**1. Preparación del Entorno (Azure Cloud Shell)**
+
+![Preparación del entorno](./capturas/ejecucion-bash.jpeg)
+
+**2. Validación de Infraestructura (Bicep)**
+
+![Validación Bicep](./capturas/bicep-compila.jpeg)
+
+**3. Integración Continua (CI en GitHub Actions)**
+
+![Pipeline CI verde](./capturas/actions-ci-verde.png)
