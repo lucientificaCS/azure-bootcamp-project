@@ -1,91 +1,38 @@
-# Proyecto Final - Bootcamp Azure (LEAD UTP)
+# Proyecto Final: Bootcamp Azure (LEAD UTP) ☁️
 
-## Descripción
+Este proyecto consiste en una aplicación web desarrollada con Python (Flask), empaquetada en un contenedor Docker y desplegada sobre servicios de Azure.
 
-Este proyecto consiste en una aplicación web sencilla desarrollada con Python y Flask, ejecutada dentro de un contenedor Docker y desplegada en Azure Container Apps.
+El objetivo fue integrar la mayor cantidad posible de conceptos vistos durante el programa: infraestructura como código con Bicep, almacenamiento seguro de secretos mediante Key Vault, control de accesos con Managed Identity y RBAC, conectividad privada mediante redes virtuales y automatización de despliegues utilizando GitHub Actions.
 
-El objetivo principal es poner en práctica varios de los servicios y conceptos trabajados durante el bootcamp.
 
----
 
-## Arquitectura General
+## Arquitectura de la Solución
 
 ```text
-GitHub
-   │
-   ├── CI (Pruebas, validaciones y construcción)
-   ▼
+GitHub (código)
+      │
+      ├── CI/CD (pruebas, validación Bicep, build Docker)
+      ▼
 Azure Container Registry (ACR)
-   │
-   ▼
-Azure Container Apps
-   │
-   ├── Consulta secretos usando Managed Identity
-   ▼
-Azure Key Vault
+      │
+      │  AcrPull (Managed Identity)
+      ▼
+Azure App Service (Linux Container)
+      │
+      ├── Key Vault (demo-secret)
+      │       └── Secrets User
+      │
+      └── Storage Account
+              └── Blob Data Reader
 
-Logs y métricas
-   ▼
-Log Analytics Workspace
+Red Virtual (10.0.0.0/16)
+├── Subredes separadas
+└── NSG con acceso restringido
+
+Monitoreo
+├── Application Insights
+└── Log Analytics Workspace
 ```
-
----
-
-## Relación con los Temas del Bootcamp
-
-### Fundamentos de Azure y Azure CLI
-
-Todos los recursos se crean mediante Azure CLI utilizando un grupo de recursos dedicado:
-
-```text
-rg-retailandes-dev
-```
-
-La infraestructura se despliega completamente desde consola.
-
-### Observabilidad
-
-Se integra un Log Analytics Workspace para el monitoreo de la aplicación.
-
-También se implementa un endpoint de verificación:
-
-```text
-/health
-```
-
-para validar el estado del servicio.
-
-### Contenedores
-
-La aplicación cuenta con un Dockerfile propio.
-
-La imagen se compila y almacena en Azure Container Registry para posteriormente desplegarse en Azure Container Apps.
-
-### Seguridad
-
-La solución utiliza Managed Identity para acceder a recursos internos sin exponer credenciales.
-
-La aplicación obtiene un secreto almacenado en Azure Key Vault mediante permisos RBAC mínimos.
-
-### Infraestructura como Código
-
-Toda la infraestructura se define en:
-
-```text
-infra/main.bicep
-```
-
-permitiendo recrear el entorno de forma consistente.
-
-### Integración Continua (CI)
-
-Se incluye un flujo de GitHub Actions que ejecuta:
-
-- Pruebas unitarias.
-- Validación de la plantilla Bicep.
-- Verificaciones básicas de funcionamiento.
-
----
 
 ## Estructura del Repositorio
 
@@ -94,29 +41,26 @@ Se incluye un flujo de GitHub Actions que ejecuta:
 ├── app/
 │   ├── Código fuente Flask
 │   ├── Dockerfile
-│   └── Tests
+│   └── Scripts de prueba
 │
 ├── infra/
 │   └── main.bicep
 │
-└── .github/
-    └── workflows/
-        └── ci.yml
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+└── capturas/
+    └── Evidencias del despliegue
 ```
 
----
 
-## Guía de Despliegue
+## 🚀 Guía de Despliegue
 
-### 1. Iniciar sesión y registrar proveedores
+### 1. Iniciar sesión en Azure
 
 ```bash
 az login
-
-az provider register -n Microsoft.App
-az provider register -n Microsoft.OperationalInsights
-az provider register -n Microsoft.ContainerRegistry
-az provider register -n Microsoft.KeyVault
 ```
 
 ### 2. Crear el grupo de recursos
@@ -124,7 +68,7 @@ az provider register -n Microsoft.KeyVault
 ```bash
 az group create \
   -n rg-retailandes-dev \
-  -l eastus2 \
+  -l qatarcentral \
   --tags project=bootcamp-azure env=dev
 ```
 
@@ -134,11 +78,11 @@ az group create \
 az deployment group create \
   -g rg-retailandes-dev \
   -f infra/main.bicep \
-  -p demoSecretValue='valor-secreto-de-prueba' \
-  -n main
+  -n main \
+  -p demoSecretValue='valor-secreto-de-prueba'
 ```
 
-### 4. Construir la imagen en Azure Container Registry
+### 4. Construir la imagen Docker en Azure Container Registry
 
 ```bash
 ACR=$(az deployment group show \
@@ -153,7 +97,7 @@ az acr build \
   ./app
 ```
 
-### 5. Actualizar la aplicación con la nueva imagen
+### 5. Actualizar App Service con la nueva imagen
 
 ```bash
 az deployment group create \
@@ -161,19 +105,32 @@ az deployment group create \
   -f infra/main.bicep \
   -n main \
   -p demoSecretValue='valor-secreto-de-prueba' \
-  image=$ACR.azurecr.io/retail-app:v1
+  deployWebApp=true
 ```
 
-### 6. Verificar el despliegue
+### 6. Verificar el funcionamiento
 
 ```bash
 URL=$(az deployment group show \
   -g rg-retailandes-dev \
   -n main \
-  --query properties.outputs.appUrl.value \
+  --query properties.outputs.webUrl.value \
   -o tsv)
 
 curl $URL/health
 curl $URL/secret-check
+```
+
+---
+
+## 🧹 Eliminación de Recursos
+
+Para evitar consumir créditos innecesariamente, todos los recursos pueden eliminarse con un único comando:
+
+```bash
+az group delete \
+  -n rg-retailandes-dev \
+  --yes \
+  --no-wait
 ```
 
